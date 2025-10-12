@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Closest Named Color</title>
+<style>
+  body { font-family:sans-serif; max-width:420px; margin:2em auto; }
+  input { display:block; width:100%; margin:0.5em 0; font-size:1em; }
+  #colorBox { width:100%; height:80px; border:1px solid #999; margin-top:1em; }
+</style>
+</head>
+<body>
+<h3>Find Closest Named Color</h3>
+<input type="color" id="picker" value="#3c81f6">
+<input type="text" id="textInput" value="#3c81f6" placeholder="#rrggbb or #rgb">
+<div id="colorBox"></div>
+<p id="result"></p>
+
+<script>
+// minimal but full named color list
+const CSS_COLORS = {
+  "AliceBlue":"#f0f8ff","AntiqueWhite":"#faebd7","Aqua":"#00ffff","Aquamarine":"#7fffd4",
+  "Azure":"#f0ffff","Beige":"#f5f5dc","Bisque":"#ffe4c4","Black":"#000000",
+  "Blue":"#0000ff","CadetBlue":"#5f9ea0","CornflowerBlue":"#6495ed","DarkBlue":"#00008b",
+  "DeepSkyBlue":"#00bfff","DodgerBlue":"#1e90ff","LightBlue":"#add8e6",
+  "LightSkyBlue":"#87cefa","MediumBlue":"#0000cd","MediumSlateBlue":"#7b68ee",
+  "PowderBlue":"#b0e0e6","RoyalBlue":"#4169e1","SkyBlue":"#87ceeb",
+  "SteelBlue":"#4682b4","White":"#ffffff","GhostWhite":"#f8f8ff","Lavender":"#e6e6fa",
+  "Gainsboro":"#dcdcdc","Ivory":"#fffff0"
+};
+
+function hexToLinearRGB(hex) {
+  if (hex.length === 4)
+    hex = "#" + [...hex.slice(1)].map(x => x + x).join('');
+  const num = parseInt(hex.slice(1),16);
+  return [num>>16&255, num>>8&255, num&255].map(v=>{
+    v/=255;
+    return v<=0.04045 ? v/12.92 : ((v+0.055)/1.055)**2.4;
+  });
+}
+
+function perceptualDistance(a,b){
+  // DeltaE-like approximation in CIELAB
+  function rgb2lab([r,g,b]){
+    // D65
+    function f(t){ return t>0.008856 ? t**(1/3) : 7.787*t+16/116; }
+    const X=r*0.4124+g*0.3576+b*0.1805;
+    const Y=r*0.2126+g*0.7152+b*0.0722;
+    const Z=r*0.0193+g*0.1192+b*0.9505;
+    const xr=X/0.95047, yr=Y/1.0, zr=Z/1.08883;
+    const fx=f(xr), fy=f(yr), fz=f(zr);
+    return [116*fy-16,500*(fx-fy),200*(fy-fz)];
+  }
+  const la=rgb2lab(a), lb=rgb2lab(b);
+  return (la[0]-lb[0])**2+(la[1]-lb[1])**2+(la[2]-lb[2])**2;
+}
+
+function normalizeHex(input){
+  if(!input) return null;
+  if(!input.startsWith('#')) input='#'+input;
+  if(/^#[0-9a-fA-F]{3}$/.test(input))
+    input = "#" + [...input.slice(1)].map(x => x+x).join('');
+  if(/^#[0-9a-fA-F]{6}$/.test(input)) return input.toLowerCase();
+  const hex=input.replace(/[^0-9a-f]/gi,'').slice(0,6);
+  return hex.length ? '#'+hex.padEnd(6,'0').toLowerCase() : null;
+}
+
+function closestNamedColor(hex){
+  const rgb=hexToLinearRGB(hex);
+  let best=null, min=Infinity;
+  for(const [name,val] of Object.entries(CSS_COLORS)){
+    const d=perceptualDistance(rgb,hexToLinearRGB(val));
+    if(d<min){min=d;best={name,hex:val};}
+  }
+  return best;
+}
+
+const picker=document.getElementById('picker');
+const textInput=document.getElementById('textInput');
+const box=document.getElementById('colorBox');
+const result=document.getElementById('result');
+
+function update(value,source){
+  const norm=normalizeHex(value);
+  if(!norm){box.style.background='transparent'; result.textContent='';return;}
+  const c=closestNamedColor(norm);
+  box.style.background=c.hex;
+  result.textContent=`Closest named color: ${c.name} (${c.hex})`;
+  if(source!=='picker' && /^#[0-9a-f]{6}$/i.test(norm)) picker.value=norm;
+  if(source!=='text') textInput.value=value;
+}
+
+document.addEventListener('input',e=>{
+  if(e.target===picker) update(picker.value,'picker');
+  else if(e.target===textInput) update(textInput.value,'text');
+});
+
+update('#3c81f6');
+</script>
+</body>
+</html>
