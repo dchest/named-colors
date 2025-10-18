@@ -304,6 +304,24 @@
     const mixedBox = document.getElementById('mixedBox');
     const mixedResult = document.getElementById('mixedResult');
 
+    // Load saved color from localStorage
+    const STORAGE_KEY = 'lastUsedColor';
+    function loadSavedColor() {
+      try {
+        return localStorage.getItem(STORAGE_KEY);
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function saveColor(color) {
+      try {
+        localStorage.setItem(STORAGE_KEY, color);
+      } catch (e) {
+        // Silently fail if localStorage is not available
+      }
+    }
+
     function update(value, source) {
       const norm = normalizeHex(value);
       if (!norm) {
@@ -313,6 +331,9 @@
         mixedResult.textContent = '';
         return;
       }
+
+      // Save color to localStorage
+      saveColor(norm);
 
       const c = closestNamedColor(norm);
       box.style.background = c.hex;
@@ -334,7 +355,9 @@
       else if (e.target === textInput) update(textInput.value, 'text');
     });
 
-    update('#3c81f6');
+    // Initialize with saved color or default
+    const savedColor = loadSavedColor();
+    update(savedColor || '#3c81f6');
   </script>
 </body>
 
