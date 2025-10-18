@@ -21,21 +21,30 @@
     #colorBox {
       width: 100%;
       height: 80px;
-      border: 1px solid #999;
+      border: 1px solid silver;
       margin-top: 1em;
     }
 
     #mixedBox {
       width: 100%;
       height: 80px;
-      border: 1px solid #999;
+      border: 1px solid silver;
       margin-top: 1em;
+    }
+
+    blockquote {
+      color: gray;
+      line-height: 1.3;
     }
   </style>
 </head>
 
 <body>
   <h3>Find Closest Named Color</h3>
+  <blockquote>
+    <em>You can have any color you want,<br>as long as it's named.</em>
+    <quote>~ Henry Ford</quote>
+  </blockquote>
   <input type="color" id="picker" value="#3c81f6">
   <input type="text" id="textInput" value="#3c81f6" placeholder="#rrggbb or #rgb">
   <div id="colorBox"></div>
